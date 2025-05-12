@@ -1,3 +1,2 @@
-express
-dotenv
-axios
+# This project is a Node.js application, not Python
+# Please use package.json instead of requirements.txt

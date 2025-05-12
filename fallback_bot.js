@@ -5,7 +5,7 @@ const path = require('path');
 
 // Constants
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7577088151:AAHCGlXcowq0c4CoAZ3_AM-cV9f-qfl7-BU';
-const DEEPSEEK_API_KEY = 'sk-8e3db7a1fabe4f4a8bb44348d2761343'; // TODO: Move this to .env file
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-8e3db7a1fabe4f4a8bb44348d2761343';
 let lastUpdateId = 0;
 
 // Keep service alive by preventing it from sleeping
@@ -38,6 +38,43 @@ const loadFAQs = () => {
   }
 };
 
+// Fallback response generator that works without API
+const generateFallbackResponse = (userMessage) => {
+  const faqs = loadFAQs();
+  const userMessageLower = userMessage.toLowerCase();
+  
+  console.log('Generating fallback response using local FAQs');
+  
+  // First, check for exact keyword matches in questions
+  for (const faq of faqs.faqs) {
+    const questionLower = faq.question.toLowerCase();
+    if (questionLower.includes(userMessageLower) || userMessageLower.includes(questionLower)) {
+      return `Based on your question, here's what I found:\n\n${faq.answer}`;
+    }
+  }
+  
+  // If no direct matches, look for partial keyword matches
+  const keywords = userMessageLower.split(' ').filter(word => word.length > 3);
+  
+  for (const faq of faqs.faqs) {
+    const questionLower = faq.question.toLowerCase();
+    for (const keyword of keywords) {
+      if (questionLower.includes(keyword)) {
+        return `I found some information that might help:\n\n${faq.answer}`;
+      }
+    }
+  }
+  
+  // If still no match, return a generic response with all FAQ topics
+  let response = "I don't have a specific answer for that question. Here are the topics I can help with:\n\n";
+  faqs.faqs.forEach(faq => {
+    response += `- ${faq.question}\n`;
+  });
+  response += "\nPlease let me know if any of these topics interest you.";
+  
+  return response;
+};
+
 // Generate response with DeepSeek API
 const generateDeepSeekResponse = async (userMessage) => {
   try {
@@ -51,12 +88,12 @@ const generateDeepSeekResponse = async (userMessage) => {
     });
     
     prompt += `User: ${userMessage}\nSupport Agent:`;
-      console.log('Sending request to DeepSeek API...');
     
-    // Add detailed debugging
-    console.log('Using DeepSeek API key:', DEEPSEEK_API_KEY.substring(0, 5) + '...');
+    console.log('Sending request to DeepSeek API...');
     
-    try {
+    try {      // First attempt - standard DeepSeek API endpoint
+      console.log('Using DeepSeek API key (first few chars):', DEEPSEEK_API_KEY.substring(0, 5));
+      
       const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
         model: 'deepseek-chat',
         messages: [
@@ -68,31 +105,45 @@ const generateDeepSeekResponse = async (userMessage) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-        }
+        },
+        timeout: 15000 // 15 second timeout
       });
       
       console.log('Response received from DeepSeek API');
       return response.data.choices[0].message.content;
     } catch (error) {
-      // More detailed error logging
-      console.error('Error generating response with DeepSeek API:');
-      
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Response data:', JSON.stringify(error.response.data));
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', JSON.stringify(error.response.headers));
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('No response received:', error.request);
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error('Error message:', error.message);
+      console.error('First attempt failed, trying alternative DeepSeek endpoint...');
+        try {
+        // Second attempt - alternative API endpoint
+        const apiKey = DEEPSEEK_API_KEY.startsWith('sk-') ? DEEPSEEK_API_KEY : `sk-${DEEPSEEK_API_KEY}`;
+        console.log('Trying alternative endpoint with API key format check');
+        
+        const response = await axios.post('https://api.deepseek.ai/v1/chat/completions', {
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          timeout: 15000 // 15 second timeout
+        });
+        
+        console.log('Response received from alternative DeepSeek API');
+        return response.data.choices[0].message.content;
+      } catch (secondError) {
+        // If both API attempts fail, fall back to local response generator
+        console.error('Both API attempts failed. Using fallback response generator.');
+        return generateFallbackResponse(userMessage);
       }
-      
-      // Provide a more helpful response to users
-      return 'I apologize, but I am experiencing some technical difficulties connecting to my knowledge base. Please try again later or contact our support team directly at support@laikacx.com.';
+    }
+  } catch (error) {
+    console.error('Error in generateDeepSeekResponse:', error.message);
+    return generateFallbackResponse(userMessage);
   }
 };
 
@@ -121,7 +172,7 @@ const processUpdate = async (update) => {
     
     console.log(`Message from ${userName} (${chatId}): ${messageText}`);
     
-    // Generate response using DeepSeek
+    // Generate response using DeepSeek or fallback
     const response = await generateDeepSeekResponse(messageText);
     
     // Send response back to user

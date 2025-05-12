@@ -51,48 +51,45 @@ const generateDeepSeekResponse = async (userMessage) => {
     });
     
     prompt += `User: ${userMessage}\nSupport Agent:`;
-      console.log('Sending request to DeepSeek API...');
     
-    // Add detailed debugging
+    console.log('Sending request to DeepSeek API...');
     console.log('Using DeepSeek API key:', DEEPSEEK_API_KEY.substring(0, 5) + '...');
     
-    try {
-      const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-        }
-      });
-      
-      console.log('Response received from DeepSeek API');
-      return response.data.choices[0].message.content;
-    } catch (error) {
-      // More detailed error logging
-      console.error('Error generating response with DeepSeek API:');
-      
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Response data:', JSON.stringify(error.response.data));
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', JSON.stringify(error.response.headers));
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('No response received:', error.request);
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error('Error message:', error.message);
+    const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
       }
-      
-      // Provide a more helpful response to users
-      return 'I apologize, but I am experiencing some technical difficulties connecting to my knowledge base. Please try again later or contact our support team directly at support@laikacx.com.';
+    });
+    
+    console.log('Response received from DeepSeek API');
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error generating response with DeepSeek API:');
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Response data:', JSON.stringify(error.response.data));
+      console.error('Response status:', error.response.status);
+      console.error('Response headers:', JSON.stringify(error.response.headers));
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error message:', error.message);
+    }
+    
+    // Provide a more helpful response to users
+    return 'I apologize, but I am experiencing some technical difficulties connecting to my knowledge base. Please try again later or contact our support team directly at support@laikacx.com.';
   }
 };
 

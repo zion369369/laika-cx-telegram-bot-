@@ -23,12 +23,14 @@ You have two options for deployment:
 2. Select "Deploy from GitHub repo"
 3. Configure access to your repositories
 4. Select your repository (or create one and push your code first)
+5. **IMPORTANT:** Make sure Render detects this as a Node.js project, not Python
 
 ### Option B: Deploy Manually
 
 1. Choose "Deploy from public Git repository" 
 2. You'll need to upload your files to a public Git repo first (GitHub, GitLab, etc.)
-3. Enter the repository URL
+3. Enter the repository URL: `https://github.com/zion369369/laika-cx-telegram-bot-`
+4. **IMPORTANT:** Make sure Render detects this as a Node.js project, not Python
 
 ## Step 4: Configure Your Web Service
 
@@ -36,16 +38,25 @@ Fill in the following details:
 - **Name**: `laika-cx-telegram-bot` (or any name you prefer)
 - **Region**: Select the closest region to you
 - **Branch**: `main` (or your main branch name)
+- **Environment**: `Node` (THIS IS CRITICAL - make sure it's not set to Python)
 - **Runtime**: `Node`
 - **Build Command**: `npm install`
-- **Start Command**: `node polling_bot.js`
+- **Start Command**: `node fallback_bot.js`  # Use this for better reliability
+
+**IMPORTANT NOTE**: If Render is trying to use Python instead of Node.js, you need to:
+1. In the dashboard, under "Settings" 
+2. Look for "Runtime Environment" 
+3. Change it from "Python" to "Node"
 
 ## Step 5: Add Environment Variables
 
 1. Scroll down to the "Environment" section
-2. Add the following environment variable:
+2. Add the following environment variables:
    - Key: `TELEGRAM_BOT_TOKEN`
    - Value: `7577088151:AAHCGlXcowq0c4CoAZ3_AM-cV9f-qfl7-BU`
+   
+   - Key: `DEEPSEEK_API_KEY`
+   - Value: `sk-8e3db7a1fabe4f4a8bb44348d2761343`
 
 ## Step 6: Deploy Your Service
 

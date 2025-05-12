@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: laika-cx-telegram-bot
+    env: node
+    buildCommand: npm install
+    startCommand: node fallback_bot.js
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: 7577088151:AAHCGlXcowq0c4CoAZ3_AM-cV9f-qfl7-BU
+      - key: DEEPSEEK_API_KEY
+        value: sk-8e3db7a1fabe4f4a8bb44348d2761343
+    plan: free
