@@ -51,7 +51,7 @@ const generateDeepSeekResponse = async (userMessage) => {
     });
     
     prompt += `User: ${userMessage}\nSupport Agent:`;
-      console.log('Sending request to DeepSeek API...');
+    console.log('Sending request to DeepSeek API...');
     
     // Add detailed debugging
     console.log('Using DeepSeek API key:', DEEPSEEK_API_KEY.substring(0, 5) + '...');
@@ -76,8 +76,7 @@ const generateDeepSeekResponse = async (userMessage) => {
     } catch (error) {
       // More detailed error logging
       console.error('Error generating response with DeepSeek API:');
-      
-      if (error.response) {
+        if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         console.error('Response data:', JSON.stringify(error.response.data));
@@ -93,6 +92,10 @@ const generateDeepSeekResponse = async (userMessage) => {
       
       // Provide a more helpful response to users
       return 'I apologize, but I am experiencing some technical difficulties connecting to my knowledge base. Please try again later or contact our support team directly at support@laikacx.com.';
+    }
+  } catch (outerError) {
+    console.error('Error in generateDeepSeekResponse:', outerError);
+    return 'I apologize, but I am experiencing some technical difficulties. Please try again later or contact our support team directly.';
   }
 };
 

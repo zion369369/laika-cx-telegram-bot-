@@ -2,6 +2,7 @@ services:
   - type: web
     name: laika-cx-telegram-bot
     env: node
+    runtime: node
     buildCommand: npm install
     startCommand: node fallback_bot.js
     envVars:
