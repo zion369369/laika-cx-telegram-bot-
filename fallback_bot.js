@@ -43,13 +43,13 @@ const generateFallbackResponse = (userMessage) => {
   const faqs = loadFAQs();
   const userMessageLower = userMessage.toLowerCase();
   
-  console.log('Generating fallback response using local FAQs');
+  console.log('Generating fallback response using local FAQs - API connection failed');
   
   // First, check for exact keyword matches in questions
   for (const faq of faqs.faqs) {
     const questionLower = faq.question.toLowerCase();
     if (questionLower.includes(userMessageLower) || userMessageLower.includes(questionLower)) {
-      return `Based on your question, here's what I found:\n\n${faq.answer}`;
+      return `I understand you're asking about ${faq.question}.\n\n${faq.answer}\n\nIs there anything specific about this that you'd like to know more about?`;
     }
   }
   
@@ -60,17 +60,17 @@ const generateFallbackResponse = (userMessage) => {
     const questionLower = faq.question.toLowerCase();
     for (const keyword of keywords) {
       if (questionLower.includes(keyword)) {
-        return `I found some information that might help:\n\n${faq.answer}`;
+        return `I think this information about ${faq.question} might help answer your question:\n\n${faq.answer}\n\nDoes this address what you were looking for?`;
       }
     }
   }
   
-  // If still no match, return a generic response with all FAQ topics
-  let response = "I don't have a specific answer for that question. Here are the topics I can help with:\n\n";
+  // If still no match, return a more conversational response with all FAQ topics
+  let response = "I'm not sure I fully understand your question. Here are the topics I can help you with:\n\n";
   faqs.faqs.forEach(faq => {
-    response += `- ${faq.question}\n`;
+    response += `• ${faq.question}\n`;
   });
-  response += "\nPlease let me know if any of these topics interest you.";
+  response += "\nCould you please let me know which of these topics you're interested in, or try rephrasing your question?";
   
   return response;
 };
@@ -90,9 +90,10 @@ const generateDeepSeekResponse = async (userMessage) => {
     prompt += `User: ${userMessage}\nSupport Agent:`;
     
     console.log('Sending request to DeepSeek API...');
-    
-    try {      // First attempt - standard DeepSeek API endpoint
+      try {
+      // First attempt - standard DeepSeek API endpoint
       console.log('Using DeepSeek API key (first few chars):', DEEPSEEK_API_KEY.substring(0, 5));
+      console.log('Attempting connection to primary DeepSeek API endpoint...');
       
       const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
         model: 'deepseek-chat',
@@ -106,17 +107,26 @@ const generateDeepSeekResponse = async (userMessage) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
         },
-        timeout: 15000 // 15 second timeout
+        timeout: 20000 // Extended timeout to 20 seconds
       });
       
-      console.log('Response received from DeepSeek API');
-      return response.data.choices[0].message.content;
+      console.log('Success! Response received from DeepSeek API');
+      if (response.data && response.data.choices && response.data.choices.length > 0) {
+        console.log('Valid response structure received');
+        return response.data.choices[0].message.content;
+      } else {
+        console.error('Unexpected API response structure:', JSON.stringify(response.data));
+        throw new Error('Invalid response structure from API');
+      }
     } catch (error) {
-      console.error('First attempt failed, trying alternative DeepSeek endpoint...');
-        try {
+      console.error('First API attempt failed with error:', error.message);
+      if (error.response) {
+        console.error('API responded with status:', error.response.status);
+        console.error('API response data:', JSON.stringify(error.response.data));
+      }      try {
         // Second attempt - alternative API endpoint
         const apiKey = DEEPSEEK_API_KEY.startsWith('sk-') ? DEEPSEEK_API_KEY : `sk-${DEEPSEEK_API_KEY}`;
-        console.log('Trying alternative endpoint with API key format check');
+        console.log('Trying alternative endpoint: api.deepseek.ai with API key format check');
         
         const response = await axios.post('https://api.deepseek.ai/v1/chat/completions', {
           model: 'deepseek-chat',
@@ -130,15 +140,41 @@ const generateDeepSeekResponse = async (userMessage) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
-          timeout: 15000 // 15 second timeout
+          timeout: 20000 // Extended timeout to 20 seconds
         });
         
-        console.log('Response received from alternative DeepSeek API');
+        console.log('Success! Response received from alternative DeepSeek API');
         return response.data.choices[0].message.content;
       } catch (secondError) {
-        // If both API attempts fail, fall back to local response generator
-        console.error('Both API attempts failed. Using fallback response generator.');
-        return generateFallbackResponse(userMessage);
+        console.error('Second API attempt failed with error:', secondError.message);
+        
+        // Third attempt - OpenAI-compatible endpoint
+        try {
+          console.log('Trying third alternative endpoint as OpenAI-compatible...');
+          
+          const response = await axios.post('https://api.deepinfra.com/v1/openai/chat/completions', {
+            model: 'deepseek-ai/deepseek-chat-v1',
+            messages: [
+              { role: 'system', content: 'You are a helpful assistant for Laika CX.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+            },
+            timeout: 20000
+          });
+          
+          console.log('Success! Response received from third API attempt');
+          return response.data.choices[0].message.content;
+        } catch (thirdError) {
+          console.error('All API attempts failed. Using fallback response generator.');
+          console.error('Final error:', thirdError.message);
+          return generateFallbackResponse(userMessage);
+        }
       }
     }
   } catch (error) {
