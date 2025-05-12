@@ -1,0 +1,5 @@
+{
+  "language": "nodejs",
+  "run": "node polling_bot.js",
+  "entrypoint": "polling_bot.js"
+}

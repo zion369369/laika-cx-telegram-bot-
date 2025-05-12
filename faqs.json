@@ -1,0 +1,16 @@
+{
+  "faqs": [
+    {
+      "question": "What is Laika CX?",
+      "answer": "Laika CX is a customer experience platform that helps businesses improve their customer interactions through AI-powered insights, automated responses, and comprehensive analytics. Our solution integrates with various communication channels to provide a seamless experience for both businesses and their customers."
+    },
+    {
+      "question": "How can I subscribe to Laika CX services?",
+      "answer": "You can subscribe to Laika CX services by visiting our website at laikacx.com and selecting the pricing plan that best fits your business needs. We offer different tiers including Basic, Professional, and Enterprise options. For custom solutions, please contact our sales team directly at sales@laikacx.com."
+    },
+    {
+      "question": "What support channels does Laika CX integrate with?",
+      "answer": "Laika CX integrates with multiple communication channels including Facebook Messenger, WhatsApp, Instagram, Twitter/X, email, web chat, SMS, and more. This allows your business to provide consistent customer support across all platforms from a single dashboard."
+    }
+  ]
+}

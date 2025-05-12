@@ -1,0 +1,3 @@
+@echo off
+echo Starting Laika CX Telegram Bot...
+node server.js

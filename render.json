@@ -1,0 +1,12 @@
+{
+  "name": "laika-cx-telegram-bot",
+  "version": "1.0.0",
+  "description": "Customer support chatbot for Laika CX on Telegram",
+  "main": "polling_bot.js",
+  "scripts": {
+    "start": "node polling_bot.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
